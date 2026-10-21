@@ -1,0 +1,77 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: transjakarta_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: transjakarta
+    ports:
+      - "5433:5432" 
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    container_name: transjakarta_mosquitto
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  rabbitmq:
+    image: rabbitmq:management-alpine
+    container_name: transjakarta_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: transjakarta_backend
+    ports:
+      - "8080:8080"
+    environment:
+      APP_PORT: "8080"
+      DB_HOST: "postgres"
+      DB_USER: "postgres"
+      DB_PASSWORD: "postgres"
+      DB_NAME: "transjakarta"
+      DB_PORT: "5432"   
+      DB_SSL: "disable"
+      DB_TZ: "Asia/Jakarta" 
+      MQTT_BROKER: "tcp://mosquitto:1883"
+      RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
+
+  mock-publisher:
+    build:
+      context: .
+      dockerfile: Dockerfile.pub
+    container_name: transjakarta_mock_publisher
+    environment:
+      MQTT_BROKER: "tcp://mosquitto:1883"
+    depends_on:
+      - mosquitto
+      - app
+
+volumes:
+  postgres_data:

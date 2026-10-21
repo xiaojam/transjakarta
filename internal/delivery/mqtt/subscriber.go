@@ -1,0 +1,50 @@
+package mqtt
+
+import (
+	"encoding/json"
+	"log"
+
+	"transjakarta/internal/dto"
+	"transjakarta/internal/service"
+
+	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
+)
+
+type LocationSubscriber struct {
+	client  pahoMqtt.Client
+	service service.LocationService
+}
+
+func NewLocationSubscriber(client pahoMqtt.Client, service service.LocationService) *LocationSubscriber {
+	return &LocationSubscriber{
+		client:  client,
+		service: service,
+	}
+}
+
+func (s *LocationSubscriber) Start() {
+	topic := "/fleet/vehicle/+/location"
+	token := s.client.Subscribe(topic, 1, s.handleMessage)
+	token.Wait()
+	if token.Error() != nil {
+		log.Fatalf("Gagal subscribe topic MQTT: %v", token.Error())
+	}
+	log.Printf("MQTT Subscriber mendengarkan topic: %s", topic)
+}
+
+func (s *LocationSubscriber) handleMessage(client pahoMqtt.Client, msg pahoMqtt.Message) {
+	var payload dto.LocationPayload
+	if err := json.Unmarshal(msg.Payload(), &payload); err != nil {
+		log.Printf("[MQTT Error] JSON Payload tidak valid: %v", err)
+		return
+	}
+
+	if payload.VehicleID == "" || payload.Latitude.IsZero() || payload.Longitude.IsZero() || payload.Timestamp == 0 {
+		log.Println("[MQTT Validation Error] Field payload kurang/salah")
+		return
+	}
+
+	if err := s.service.ProcessLocation(payload); err != nil {
+		log.Printf("[MQTT Service Error] Gagal memproses lokasi: %v", err)
+	}
+}
