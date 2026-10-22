@@ -1,0 +1,69 @@
+{
+	"info": {
+		"_postman_id": "c084fa0c-d296-4501-8fd5-440fa8c4a1cf",
+		"name": "Transjakarta",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "History",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/vehicles/B1234XYZ/history?start=1792604511&end=1792605511",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"vehicles",
+						"B1234XYZ",
+						"history"
+					],
+					"query": [
+						{
+							"key": "start",
+							"value": "1792604511"
+						},
+						{
+							"key": "end",
+							"value": "1792605511"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Location",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/vehicles/B1234XYZ/location",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"vehicles",
+						"B1234XYZ",
+						"location"
+					],
+					"query": [
+						{
+							"key": "start",
+							"value": "1792604511",
+							"disabled": true
+						},
+						{
+							"key": "end",
+							"value": "1792605511",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

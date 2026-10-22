@@ -27,24 +27,24 @@ func (s *LocationSubscriber) Start() {
 	token := s.client.Subscribe(topic, 1, s.handleMessage)
 	token.Wait()
 	if token.Error() != nil {
-		log.Fatalf("Gagal subscribe topic MQTT: %v", token.Error())
+		log.Fatalf("[MQTT Subscriber] Failed to subscribe to topic '%s': %v", topic, token.Error())
 	}
-	log.Printf("MQTT Subscriber mendengarkan topic: %s", topic)
+	log.Printf("[MQTT Subscriber] Listening on topic: %s", topic)
 }
 
 func (s *LocationSubscriber) handleMessage(client pahoMqtt.Client, msg pahoMqtt.Message) {
 	var payload dto.LocationPayload
 	if err := json.Unmarshal(msg.Payload(), &payload); err != nil {
-		log.Printf("[MQTT Error] JSON Payload tidak valid: %v", err)
+		log.Printf("[MQTT Error] Invalid JSON payload format: %v", err)
 		return
 	}
 
 	if payload.VehicleID == "" || payload.Latitude.IsZero() || payload.Longitude.IsZero() || payload.Timestamp == 0 {
-		log.Println("[MQTT Validation Error] Field payload kurang/salah")
+		log.Println("[MQTT Error] Missing or invalid payload fields")
 		return
 	}
 
 	if err := s.service.ProcessLocation(payload); err != nil {
-		log.Printf("[MQTT Service Error] Gagal memproses lokasi: %v", err)
+		log.Printf("[MQTT Error] Failed to process vehicle location: %v", err)
 	}
 }
